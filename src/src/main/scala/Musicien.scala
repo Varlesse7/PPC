@@ -41,7 +41,7 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
                tab_viv = res
                // Partie Election
                if !(tab_viv.contains(1))
-               then election ! "NewChef"
+               then election ! NewChef(tab_viv)
           }
           case Vote (id) => {
                if tab_viv(i) == 0 
@@ -49,6 +49,9 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
           }
           case OtherVote(id) => {
                election ! OtherVote(id)
+          }
+          case ResElection (res) => {
+               tab_viv(res) = 1
           }
 
           //
