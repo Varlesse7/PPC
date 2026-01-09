@@ -15,7 +15,6 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
      val election = context.actorOf(Props[Election], name = "election")
 
      val chef = false
-
      
      def receive = {
           
@@ -38,11 +37,13 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
                vivarium ! Alive(id)
           }
           case TabAlive(res) => {
-               tab_viv = res
+               tab_viv = res // Possible synchronisation entre musicien
                // Partie Election
                if !(tab_viv.contains(1))
                then election ! NewChef(tab_viv)
           }
+
+          // Election
           case Vote (id) => {
                if tab_viv(i) == 0 
                then terminaux[i].port ! OtherVote(id)
@@ -63,6 +64,8 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
                then terminaux[i].port ! Alive(id)
           } 
 
+
+          if tab_viv(id) == 1 then Chef(tab_viv)
      
           if chef 
           then context.system.scheduler.scheduleOnce (1800 milliseconds) (Chef(tab_viv))

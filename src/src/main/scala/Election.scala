@@ -19,9 +19,7 @@ class Election () extends Actor {
                 if tab_viv(i) == 0 
                 then possible_chef + i
             }
-            self ! MyVote
-        }
-        case MyVote =>{
+
             var vote = rand.nextInt(possible_chef.lenght)
             sender ! Vote(possible_chef(vote))
         }
@@ -30,6 +28,6 @@ class Election () extends Actor {
         }
 
         if resultat.sum == possible_chef.lenght 
-        then ResElection(resultat.zipWithIndex.maxBy(_._1)._2)
+        then sender ! ResElection(resultat.zipWithIndex.maxBy(_._1)._2)
     }
 }

@@ -14,13 +14,13 @@ class Vivarium (val tab_viv: List(Int)) extends Actor {
         case Alive (id) => {
             for (i <- 0 to 3) {
                 if i == id 
-                then tab_cmpt(i) = 0
-                else tab_cmpt(i) = tab_cmpt(i)+1
+                then tab_cmpt(id) = 0
+                else tab_cmpt(id) = tab_cmpt(id)+1
             }
         }
 
         for (i <- 0 to 3) {
-            if tab_cmpt(i) >= 10 
+            if (tab_cmpt(i) >= 10) && (tab_viv(i) >= 0)
             then {
                 tab_viv(i) = -1
                 sender ! TabAlive(tab_viv)
