@@ -24,9 +24,6 @@ class Conductor (player: ActorRef,prov: ActorRef) extends Actor {
         }
         case SendMeasure(meas) => {
             player ! Play(meas)
-            context.system.scheduler.scheduleOnce ( 1800.milliseconds ) { 
-                self ! "StartGame"
-            }
         }
     }
 }

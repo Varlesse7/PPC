@@ -1,0 +1,5 @@
+[0m[[0m[31merror[0m] [0m[0mD:\varlesse\Documents\Programmation\M2 STL\PPC(Scala)\PPC\src\src\main\scala\Musicien.scala:90:30: not enough arguments for method apply: (id: Int, role: Int)upmc.akka.ppc.Musicien.Alive in object Alive.[0m
+[0m[[0m[31merror[0m] [0m[0mUnspecified value parameter role.[0m
+[0m[[0m[31merror[0m] [0m[0m               sender ! Alive(id)[0m
+[0m[[0m[31merror[0m] [0m[0m                             ^[0m
+[0m[[0m[31merror[0m] [0m[0mone error found[0m

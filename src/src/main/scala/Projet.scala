@@ -1,4 +1,4 @@
-package upmc.akka.leader
+package upmc.akka.ppc
 
 import com.typesafe.config.ConfigFactory
 import akka.actor._
@@ -7,9 +7,8 @@ case class Terminal (id:Int, ip:String, port:Int)
 
 
 object Projet {
-
-   
      def main (args : Array[String]) {
+          import Musicien._
           // Gestion des erreurs
           if (args.size != 1) {
                println ("Erreur de syntaxe : run <num>")
@@ -23,7 +22,6 @@ object Projet {
                sys.exit(1)
           }
 
-          var necrologie = List[Int](4)
           var musicienlist = List[Terminal]()
           
           // recuperation des adresses de tous les musiciens
