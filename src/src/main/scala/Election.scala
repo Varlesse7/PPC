@@ -34,13 +34,14 @@ class Election () extends Actor {
         
         case OtherVote(id) => {
             resultat = resultat.updated(id, resultat(id)+ 1)
+
+            if (resultat.sum == possible_chef.length){
+                possible_chef = List[Int]()
+                sender ! ResElection(resultat.zipWithIndex.maxBy(_._1)._2)
+                resultat = List(0,0,0,0)
+            }
         }
 
-        if (resultat.sum == possible_chef.length){
-            possible_chef = List[Int]()
-            sender ! ResElection(resultat.zipWithIndex.maxBy(_._1)._2)
-            resultat = List(0,0,0,0)
-        }
     }
 
 }

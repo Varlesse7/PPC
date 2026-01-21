@@ -8,19 +8,19 @@ import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 
 object Musicien  {
-     case class Alive(id: Int, role: Int)
+     case class StillAlive(id: Int)
      case class Chef(tab_viv: List[Int])
      case class Vote(id: Int)
      case class ResElection(res: Int)
      case class TabAlive(res: List[Int])
      case class Start()
-     case class WhoAlive()
 }
 
 class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
      import Musicien._
      import Election._
      import Provider._
+     import Vivarium._
 
      // Les differents acteurs du systeme
      val db = context.actorOf(Props[DataBaseActor])
@@ -43,14 +43,50 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
           // Comportement Musicien
           case "StartGame" => {
                conductor ! "StartGame"
-               context.system.scheduler.scheduleOnce ( 1000.milliseconds ) { 
-                    println(tab_viv)
+               println(tab_viv)
+          }
+
+          // Séparer encore plus le tout 
+          case Start => {
+               vivarium ! NewBorn (id) 
+
+               for (i <- 0 to 3) {
+                    val host = terminaux(i).ip
+                    val port = terminaux(i).port
+                    val path = s"akka.tcp://MozartSystem$i@127.0.0.1:$port/user/Musicien$i"
+
+                    context.actorSelection(path).resolveOne(3.seconds).onComplete {
+                         case Success(ref) => ref ! NewBorn(id)
+                         case Failure(ex)  => 
+                    }
+               }
+          }
+
+          case NewBorn(id) => {
+               vivarium ! NewBorn(id)
+          }
+
+          case SynchrAlive(res) => {
+               tab_viv = res
+
+               context.system.scheduler.scheduleOnce ( 500.milliseconds ) { 
+                    for (i <- 0 to 3) {
+                         if (tab_viv(i) >= 0 ){
+                              val host = terminaux(i).ip
+                              val port = terminaux(i).port
+                              val path = s"akka.tcp://MozartSystem$i@127.0.0.1:$port/user/Musicien$i"
+
+                              context.actorSelection(path).resolveOne(3.seconds).onComplete {
+                                   case Success(ref) => ref ! StillAlive(id)
+                                   case Failure(ex)  => println(s"Alive : Impossible de resoudre $path : $ex")
+                              }
+                         }
+                    } 
                }
 
-          }
-          
-          case Start => {
-               vivarium ! Alive(id, tab_viv(id))
+               if (!(tab_viv.contains(1))){
+                    election ! NewChef(tab_viv)
+               }
           }
 
           // Comportement Chef
@@ -64,7 +100,7 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
 
                          context.actorSelection(path).resolveOne(3.seconds).onComplete {
                               case Success(ref) => ref ! "StartGame"
-                              case Failure(ex)  => println(s"Impossible de resoudre $path : $ex")
+                              case Failure(ex)  =>
                          }
                     }
                }
@@ -75,32 +111,22 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
           }
 
           // Partie Vivarium
-          case Alive(id, role) => {
-               vivarium ! Alive(id, tab_viv(id))
+          case StillAlive(id) => {
+               vivarium ! StillAlive(id)
 
                context.system.scheduler.scheduleOnce ( 500.milliseconds ) { 
                     for (i <- 0 to 3) {
-                         if (tab_viv(id) >= 0 ){
+                         if (tab_viv(i) >= 0 ){
                               val host = terminaux(i).ip
                               val port = terminaux(i).port
                               val path = s"akka.tcp://MozartSystem$i@127.0.0.1:$port/user/Musicien$i"
 
                               context.actorSelection(path).resolveOne(3.seconds).onComplete {
-                                   case Success(ref) => ref ! Alive(id,tab_viv(id))
-                                   case Failure(ex)  => println(s"Impossible de resoudre $path : $ex")
+                                   case Success(ref) => ref ! StillAlive(id)
+                                   case Failure(ex)  => println(s"Alive : Impossible de resoudre $path : $ex")
                               }
                          }
                     } 
-                    self ! Alive (id, tab_viv(id))
-               }
-          }
-
-
-          case TabAlive(res) => {
-               tab_viv = res // Possible synchronisation entre musicien
-               // Partie Election
-               if (!(tab_viv.contains(1))){
-                    election ! NewChef(tab_viv)
                }
           }
 
@@ -119,18 +145,22 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
                     }
                }
           }
+          
           case OtherVote(id) => {
                election ! OtherVote(id)
           }
+
           case ResElection (res) => {
                tab_viv = tab_viv.updated(res, 1)
+
+               if (tab_viv(id) == 1) {
+                    vivarium ! ResTab(tab_viv)
+                    self ! Chef(tab_viv)
+               }
           }
 
           //
      
-          if (tab_viv(id) == 1) {
-               self ! Chef(tab_viv)
-          }
           
      }
 }
