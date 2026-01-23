@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 
 object Musicien  {
-     case class StillAlive(id: Int)
+     case class StillAlive(id: Int, role: Int)
      case class Chef(tab_viv: List[Int])
      case class Vote(id: Int)
      case class ResElection(res: Int)
@@ -66,7 +66,7 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
                vivarium ! NewBorn(id)
           }
 
-          case SynchrAlive(res) => {
+          case SynchrNewAlive(res) => {
                tab_viv = res
 
                context.system.scheduler.scheduleOnce ( 500.milliseconds ) { 
@@ -77,16 +77,30 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
                               val path = s"akka.tcp://MozartSystem$i@127.0.0.1:$port/user/Musicien$i"
 
                               context.actorSelection(path).resolveOne(3.seconds).onComplete {
-                                   case Success(ref) => ref ! StillAlive(id)
-                                   case Failure(ex)  => println(s"Alive : Impossible de resoudre $path : $ex")
+                                   case Success(ref) => ref ! StillAlive(id, tab_viv(id))
+                                   case Failure(ex)  =>
                               }
                          }
                     } 
                }
-
-               if (!(tab_viv.contains(1))){
-                    election ! NewChef(tab_viv)
+               context.system.scheduler.scheduleOnce ( 1000.milliseconds ) { 
+                    if (!(tab_viv.contains(1))){
+                         election ! NewChef(tab_viv)
+                    }
                }
+
+          }
+
+          case SynchrAlive(res) => {
+               if (tab_viv(id) >= 0) {
+                    tab_viv = res
+                    if (!(tab_viv.contains(1))){
+                         election ! NewChef(tab_viv)
+                    }
+               }else {
+                    sender ! StillAlive(id, tab_viv(id))
+               }
+
           }
 
           // Comportement Chef
@@ -111,8 +125,8 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
           }
 
           // Partie Vivarium
-          case StillAlive(id) => {
-               vivarium ! StillAlive(id)
+          case StillAlive(id, role) => {
+               vivarium ! StillAlive(id, role)
 
                context.system.scheduler.scheduleOnce ( 500.milliseconds ) { 
                     for (i <- 0 to 3) {
@@ -122,8 +136,8 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
                               val path = s"akka.tcp://MozartSystem$i@127.0.0.1:$port/user/Musicien$i"
 
                               context.actorSelection(path).resolveOne(3.seconds).onComplete {
-                                   case Success(ref) => ref ! StillAlive(id)
-                                   case Failure(ex)  => println(s"Alive : Impossible de resoudre $path : $ex")
+                                   case Success(ref) => ref ! StillAlive(id, role)
+                                   case Failure(ex)  => 
                               }
                          }
                     } 
@@ -131,7 +145,7 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
           }
 
           // Election
-          case Vote (id) => {
+          case Vote (id_vot) => {
                for (i <- 0 to 3 ){
                     if (tab_viv(i) == 0){ // Première fois que j'utilise l'acteur remote
                          val host = terminaux(i).ip
@@ -139,8 +153,8 @@ class Musicien (val id:Int, val terminaux:List[Terminal]) extends Actor {
                          val path = s"akka.tcp://MozartSystem$i@127.0.0.1:$port/user/Musicien$i"
 
                          context.actorSelection(path).resolveOne(3.seconds).onComplete {
-                              case Success(ref) => ref ! OtherVote(id)
-                              case Failure(ex)  => println(s"Impossible de resoudre $path : $ex")
+                              case Success(ref) => ref ! OtherVote(id_vot)
+                              case Failure(ex)  => 
                          }
                     }
                }
