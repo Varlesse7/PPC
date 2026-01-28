@@ -20,9 +20,12 @@ class Election () extends Actor {
         case NewChef(tab_viv) => {
             for (i <- 0 to 3) {
                 if (tab_viv(i) >= 0) {
+                    println(s"\n\nExec : $i")
                     possible_chef = possible_chef :+ i 
                 }
             }
+
+            println(s"Possible Chef : $possible_chef\n\n")
 
             if (possible_chef.length > 1){
                 var vote = rand.nextInt(possible_chef.length)

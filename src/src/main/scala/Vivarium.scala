@@ -32,6 +32,7 @@ class Vivarium (var tab_viv: List[Int]) extends Actor {
         case StillAlive (id, role) => {
 
             if (tab_viv(id) == -1){
+                println(s"Reception : $id + $role")
                 tab_viv = tab_viv.updated(id, role)
                 sender ! SynchrAlive(tab_viv)
             }
@@ -39,9 +40,9 @@ class Vivarium (var tab_viv: List[Int]) extends Actor {
             for (i <- 0 to 3) {
                 if (tab_viv(i) >= 0){
                     if (i == id){
-                        tab_cmpt = tab_cmpt.updated(id, 0)
+                        tab_cmpt = tab_cmpt.updated(i, 0)
                     } else {
-                        tab_cmpt = tab_cmpt.updated(id, tab_cmpt(id) + 1)
+                        tab_cmpt = tab_cmpt.updated(i, tab_cmpt(i) + 1)
                     }
                 }
             }
@@ -51,6 +52,7 @@ class Vivarium (var tab_viv: List[Int]) extends Actor {
             for (i <- 0 to 3) {
                 if ((tab_cmpt(i) >= 10)){
                     tab_viv = tab_viv.updated(i, -1)
+                    sender ! SynchrAlive(tab_viv)
                     tab_cmpt = tab_cmpt.updated(i, 0)
                 }
             }
